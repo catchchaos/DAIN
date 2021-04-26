@@ -28,7 +28,8 @@ def train():
     model = networks.__dict__[args.netName](channel=args.channels,
                             filter_size = args.filter_size ,
                             timestep=args.time_step,
-                            training=True)
+                            training=True,
+                            flow_method=args.flow_method)
     if args.use_cuda:
         print("Turn the model into CUDA")
         model = model.cuda()

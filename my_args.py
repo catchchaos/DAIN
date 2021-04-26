@@ -15,6 +15,8 @@ parser.add_argument('--netName', type=str, default='DAIN_slowmotion',
                     choices = modelnames,help = 'model architecture: ' +
                         ' | '.join(modelnames) +
                         ' (default: DAIN)')
+parser.add_argument('--flow_method', choices=['PWC', 'RAFT'], help='Optical flow net to use',
+                    default='PWC')
 
 parser.add_argument('--datasetName', default='Vimeo_90K_interp',
                     choices= datasetNames,nargs='+')

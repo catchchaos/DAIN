@@ -34,7 +34,6 @@ class DAIN_slowmotion(torch.nn.Module):
                  filter_size = 4,
                  timestep=0.5,
                  training=True,
-                 # flow_method='RAFT'):
                  flow_method='PWC'):
 
         # base class initialization
