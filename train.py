@@ -19,6 +19,10 @@ from my_args import args
 
 def train():
     torch.manual_seed(args.seed)
+    import random
+    random.seed(args.seed)
+    import numpy as np
+    np.random.seed(args.seed)
 
     model = networks.__dict__[args.netName](channel=args.channels,
                             filter_size = args.filter_size ,

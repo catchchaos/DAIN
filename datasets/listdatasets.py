@@ -1,7 +1,7 @@
 import torch.utils.data as data
 import os
 import os.path
-from scipy.ndimage import imread
+from imageio import imread
 import numpy as np
 import random
 
@@ -19,9 +19,9 @@ def Vimeo_90K_loader(root, im_path, input_frame_size = (3, 256, 448), output_fra
         path_mid = os.path.join(root,  "im2.png")
         path_pre2 = os.path.join(root,  "im3.png")
 
-    im_pre2 = imread(path_pre2)
-    im_pre1 = imread(path_pre1)
-    im_mid = imread(path_mid)
+    im_pre2 = np.asarray(imread(path_pre2))
+    im_pre1 = np.asarray(imread(path_pre1))
+    im_mid = np.asarray(imread(path_mid))
 
     h_offset = random.choice(range(256 - input_frame_size[1] + 1))
     w_offset = random.choice(range(448 - input_frame_size[2] + 1))

@@ -7,18 +7,35 @@ from my_package.DepthFlowProjection import DepthFlowProjectionModule
 
 from Stack import Stack
 
+# import sys
+# sys.path.append('RAFT/core')
+# from raft import RAFT
+
 import PWCNet
 import S2D_models
 import Resblock
 import MegaDepth
 import time
 
+def RAFT_args():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', help="restore checkpoint", default='RAFT/models/raft-sintel-torch1.4.pth')
+    parser.add_argument('--small', action='store_true', help='use small model')
+    parser.add_argument('--mixed_precision', action='store_true', help='use mixed precision')
+    parser.add_argument('--alternate_corr', action='store_true', help='use efficent correlation implementation')
+    args = parser.parse_args([])
+    return args
+
+
 class DAIN_slowmotion(torch.nn.Module):
     def __init__(self,
                  channel = 3,
                  filter_size = 4,
                  timestep=0.5,
-                 training=True):
+                 training=True,
+                 # flow_method='RAFT'):
+                 flow_method='PWC'):
 
         # base class initialization
         super(DAIN_slowmotion, self).__init__()
@@ -39,10 +56,17 @@ class DAIN_slowmotion(torch.nn.Module):
 
         self._initialize_weights()
         
-        if self.training:
-            self.flownets = PWCNet.__dict__['pwc_dc_net']("PWCNet/pwc_net.pth.tar")
-        else:
-            self.flownets = PWCNet.__dict__['pwc_dc_net']()
+        if flow_method == 'RAFT':
+            args = RAFT_args()
+            model = nn.DataParallel(RAFT(args))
+            if self.training:
+                model.load_state_dict(torch.load(args.model).state_dict())
+            self.flownets = model.module
+        elif flow_method == 'PWC':
+            if self.training:
+                self.flownets = PWCNet.__dict__['pwc_dc_net']("PWCNet/pwc_net.pth.tar")
+            else:
+                self.flownets = PWCNet.__dict__['pwc_dc_net']()
         self.div_flow = 20.0
 
         #extract depth information
@@ -186,8 +210,8 @@ class DAIN_slowmotion(torch.nn.Module):
             STEP 3.5: for training phase, we collect the variables to be penalized.
         '''
         if self.training == True:
-                losses +=[cur_output - cur_input_1]
-                losses += [cur_output_rectified - cur_input_1]                
+                losses +=[cur_output[0] - cur_input_1]
+                losses += [cur_output_rectified[0] - cur_input_1]                
                 offsets +=[cur_offset_output]
                 filters += [cur_filter_output]
         '''
@@ -210,6 +234,23 @@ class DAIN_slowmotion(torch.nn.Module):
         elif type(time_offsets) == list:
             pass
         temp = model(input)  # this is a single direction motion results, but not a bidirectional one
+        # from utils import flow_viz
+        # import numpy as np
+        # def viz(imgs, flo):
+        #     img1 = imgs[0,:3].permute(1,2,0).detach().cpu().numpy()
+        #     img2 = imgs[0,3:].permute(1,2,0).detach().cpu().numpy()
+        #     flo = flo[0].permute(1,2,0).detach().cpu().numpy()
+        #     # map flow to rgb image
+        #     flo = flow_viz.flow_to_image(flo)
+        #     imgs = np.concatenate([img1, img2], axis=0)
+
+        #     # import matplotlib.pyplot as plt
+        #     # plt.imshow(imgs)
+        #     # plt.show()
+        #     # plt.imshow(flo / 255.0)
+        #     # plt.show()
+
+        # viz(input, temp)
 
         temps = [self.div_flow * temp * time_offset for time_offset in time_offsets]# single direction to bidirection should haven it.
         temps = [nn.Upsample(scale_factor=4, mode='bilinear')(temp)  for temp in temps]# nearest interpolation won't be better i think
