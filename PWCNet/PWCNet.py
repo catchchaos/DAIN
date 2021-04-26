@@ -141,7 +141,7 @@ class PWCDCNet(nn.Module):
 
         W_MAX = 2048
         H_MAX = 1024
-        B_MAX = 3
+        B_MAX = 8
         xx = torch.arange(0, W_MAX).view(1,-1).cuda().repeat(H_MAX,1)
         yy = torch.arange(0, H_MAX).view(-1,1).cuda().repeat(1,W_MAX)
         xx = xx.view(1,1,H_MAX,W_MAX).repeat(B_MAX,1,1,1)

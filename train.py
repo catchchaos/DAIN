@@ -15,7 +15,8 @@ import balancedsampler
 import networks
 from my_args import args
 
-
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 
 def train():
     torch.manual_seed(args.seed)
